@@ -147,7 +147,7 @@ func (framework Framework) DoShutUp(obj string, t int) {
 	sendJSON["时长"] = t
 
 	bytesData, _ := json.Marshal(sendJSON)
-	url := "http://localhost:36524/api/v1/Mpq/Api_ShutUP"
+	url := "http://localhost:36524/api/v1/Mpq/Api_Shutup"
 
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(bytesData))
 	req.Header.Set("Content-Type", "application/json")

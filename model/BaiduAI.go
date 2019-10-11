@@ -13,7 +13,7 @@ import (
 
 var (
 	token   string
-	iftoken bool = false
+	iftoken = false
 )
 
 // GetToken 获取Token
@@ -22,22 +22,11 @@ func bAIGetToken() {
 	url := "https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=" + os.Getenv("BAAPIKEY") + "&client_secret=" + os.Getenv("BASECRETKEY")
 	var tokenj tokenjson
 	fmt.Println(url)
-
-	resp, err := client.Get(url)
-	if err != nil {
-		panic(err)
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(body, &tokenj)
-	if err != nil {
-		panic(err)
-	}
+	resp, _ := client.Get(url)
+	body, _ := ioutil.ReadAll(resp.Body)
+	_ = json.Unmarshal(body, &tokenj)
 	token = tokenj.AccessToken
 	iftoken = true
-	//fmt.Println(tokenj)
 }
 
 // UploadPic 上传本地图片
@@ -61,8 +50,6 @@ func BAIUploadPic(path string) Recjson {
 	body, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(body, &rj)
 	return rj
-	//fmt.Println(rj)
-	//9 10 11 14 15
 }
 
 // UploadPicFromURL 通过url上传图片
@@ -77,17 +64,14 @@ func BAIUploadPicFromURL(urls string) Recjson {
 	req, _ := http.NewRequest("POST", "https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token="+token, bytes.NewReader([]byte(b)))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, _ := client.Do(req)
-
 	var rj Recjson
 	body, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(body, &rj)
-
 	fmt.Println(rj)
 	if rj.ErrorCode != 0 {
 		bAIGetToken()
 		BAIUploadPicFromURL(urls)
 	}
-	//fmt.Println(rj)
 	return rj
 }
 

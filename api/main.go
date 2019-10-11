@@ -49,7 +49,6 @@ func Mahua(c *gin.Context) {
 					ifResponse = true
 				}
 			}
-			//fmt.Println("解除阻塞")
 			// 如果无服务做出回应
 			if !ifResponse {
 				service.ParrotService{}.Parrot(*t)
