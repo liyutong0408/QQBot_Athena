@@ -1,0 +1,6 @@
+/go.sum
+/.env
+/rj.json
+/.idea
+/.vscode
+/http_test.http
