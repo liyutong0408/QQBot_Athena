@@ -15,9 +15,13 @@ func (service MenuService) Menu(ch chan bool, framework model.Framework) {
 		return
 	}
 
-	if !strings.Contains(framework.GetRecMsg(), "[IR:at="+os.Getenv("BOT")+"]") {
+	if !strings.Contains(framework.GetRecMsg(), "[@"+os.Getenv("BOT")+"]") {
 		ch <- false
 	}
+
+	text := "项目地址：https://github.com/Logiase/QQBot_Athena"
+
+	framework.SetSendMsg(text).DoSendMsg()
 
 	ch <- true
 }

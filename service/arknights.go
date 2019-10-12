@@ -14,9 +14,9 @@ import (
 
 var (
 	hrData       hrDataT
-	tagList      string          = ""
-	ifNew        bool            = false
-	arkMap       map[string]bool = make(map[string]bool)
+	tagList      = ""
+	ifNew        = false
+	arkMap       = make(map[string]bool)
 	arkLastGroup string
 )
 
@@ -133,10 +133,10 @@ func pullData() hrDataT {
 	var rj []arkRecJSON
 	_ = json.Unmarshal(body, &rj)
 
-	// 去除rj中123星干员
+	// 去除rj中12星干员
 	var data []arkRecJSON
 	for _, item := range rj {
-		if item.Level > 3 {
+		if item.Level > 2 {
 			data = append(data, item)
 		}
 	}
@@ -220,9 +220,19 @@ func getCombination(tags []string) []resultT {
 		}
 		var charsResult []int
 		if !ifGJZS {
+			ifPrint := true
 			for index := range chars {
-				if hrData.characters[index].rare != 6 {
-					charsResult = append(charsResult, index)
+				if hrData.characters[index].rare == 3 {
+					ifPrint = false
+					break
+				}
+			}
+
+			if !ifPrint {
+				for index := range chars {
+					if hrData.characters[index].rare != 6 {
+						charsResult = append(charsResult, index)
+					}
 				}
 			}
 		} else {
