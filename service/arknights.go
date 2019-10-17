@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	combinations "github.com/mxschmitt/golang-combinations"
+	"gopkg.in/ini.v1"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -18,6 +19,7 @@ var (
 	ifNew        = false
 	arkMap       = make(map[string]bool)
 	arkLastGroup string
+	imagePath    = "C:\\Users\\Administrator\\Desktop\\QQLight\\temp\\image\\"
 )
 
 type (
@@ -71,13 +73,20 @@ func (service ArknightsService) Arknights(ch chan bool, framework model.Framewor
 		return
 	}
 
-	fmt.Println("start upload", arkMap[framework.GetFrom()])
 	if arkMap[framework.GetFrom()] {
-		if strings.Index(framework.GetRecMsg(), "{") == 0 {
-			if strings.Contains(framework.GetRecMsg(), "}") {
-				fmt.Println("entering")
-				framework.GetPicURL()
-
+		if strings.Index(framework.GetRecMsg(), "[QQ:pic=") == 0 {
+			if strings.Contains(framework.GetRecMsg(), "]") {
+				var cfg *ini.File
+				var err error
+				for {
+					cfg, err = ini.Load(imagePath + framework.GetRecMsg()[8:strings.Index(framework.GetRecMsg(), ".")] + ".ini")
+					fmt.Println(err)
+					if err == nil {
+						break
+					}
+				}
+				url := cfg.Section("data").Key("url").String()
+				service.UploadPic(framework, url)
 				arkLastGroup = framework.GetFrom()
 				ch <- true
 				arkMap[framework.GetFrom()] = false
@@ -90,8 +99,7 @@ func (service ArknightsService) Arknights(ch chan bool, framework model.Framewor
 	return
 }
 
-func (service ArknightsService) UploadPic(result string) {
-	fmt.Println("entering up")
+func (service ArknightsService) UploadPic(framework model.Framework, result string) {
 	r := model.BAIUploadPicFromURL(result)
 	var tags []string
 	for _, item := range r.WordsResult {
@@ -118,7 +126,7 @@ func (service ArknightsService) UploadPic(result string) {
 		}
 	}
 
-	model.NewFramework().SimpleConstruct(2).SetFrom(arkLastGroup).SetSendMsg(text).DoSendMsg()
+	framework.SetSendMsg(text).DoSendMsg()
 	fmt.Println("leaving up")
 }
 

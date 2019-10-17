@@ -34,26 +34,28 @@ func (service ShutUpService) ShutUp(ch chan bool, framework model.Framework) {
 	}
 
 	if strings.HasPrefix(recMsg, "禁言") {
-		if strings.Contains(recMsg, "[IR:at=") {
-			obj := recMsg[strings.Index(recMsg, "[IR:at=")+7 : strings.Index(recMsg, "]")]
-			time, err := strconv.Atoi(recMsg[strings.Index(recMsg, "]")+2:])
+		if ok, objL := framework.IsRecMsgContainAT(); ok {
+			time, err := strconv.Atoi(recMsg[strings.LastIndex(recMsg, "]")+2:])
 			if err != nil {
 				framework.SetSendMsg("arg error").DoSendMsg()
 				ch <- true
 				//fmt.Println("leaving ShutUp")
 				return
 			}
-			framework.DoShutUp(obj, time*60)
+			for _, obj := range objL {
+				framework.DoShutUp(obj, time*60)
+			}
 			framework.SetSendMsg("如您所愿,Master").DoSendMsg()
 			ch <- true
 			//fmt.Println("leaving ShutUp")
 			return
 		}
 	} else if strings.HasPrefix(recMsg, "解禁") {
-		if strings.Contains(recMsg, "[IR:at=") {
-			obj := recMsg[strings.Index(recMsg, "[IR:at=")+7 : strings.Index(recMsg, "]")]
-			//time, err := strconv.Atoi(recMsg[strings.Index(recMsg, "]")+2:])
-			framework.DoShutUp(obj, 0)
+		if ok, objL := framework.IsRecMsgContainAT(); ok {
+			for _, obj := range objL {
+				framework.DoShutUp(obj, 0)
+			}
+
 			framework.SetSendMsg("如您所愿,Master").DoSendMsg()
 			ch <- true
 			//fmt.Println("leaving ShutUp")
@@ -65,13 +67,22 @@ func (service ShutUpService) ShutUp(ch chan bool, framework model.Framework) {
 	return
 }
 
-func (service ShutUpService) Answer(framework model.Framework) {
-	framework.SetType(2)
-	if framework.GetTrigger() == os.Getenv("MASTER") {
+func (service ShutUpService) Answer(ch chan bool, framework model.Framework) {
+	if !strings.HasPrefix(framework.GetRecMsg(), "[QQ:禁言QQ=") {
+		ch <- false
+		return
+	}
+
+	pos1 := strings.Index(framework.GetRecMsg(), "=")
+	pos2 := strings.Index(framework.GetRecMsg(), ",")
+
+	if framework.GetRecMsg()[pos1+1:pos2] == os.Getenv("MASTER") {
 		whatAreYouDOING(framework)
 	}
 
-	framework.SetSendMsg("[Face178.gif][Face67.gif]").DoSendMsg()
+	//framework.SetSendMsg("[QQ:face=178][QQ:face=67]").DoSendMsg()
+	ch <- true
+	return
 }
 
 func (service ShutUpService) Refresh(ch chan bool, framework model.Framework) {

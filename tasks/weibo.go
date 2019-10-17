@@ -3,16 +3,24 @@ package tasks
 import (
 	"Athena/model"
 	"encoding/json"
+	"fmt"
+	"gopkg.in/ini.v1"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 )
 
-var newestID uint64
-var topID uint64
-
 func RefreshWeibo() error {
+	cfg, err := ini.Load("temp.ini")
+	if err != nil {
+		fmt.Println("failed to load ini")
+		return err
+	}
+
+	newestID, _ := cfg.Section("weibo").Key("newest").Uint64()
+	topID, _ := cfg.Section("weibo").Key("top").Uint64()
+
 	framework := model.NewFramework().SimpleConstruct(2).SetFrom("547902826")
 	var re Weibo
 	resp, err := http.Get("https://m.weibo.cn/api/container/getIndex?uid=5812573321&luicode=10000011&lfid=100103type%3D1%26q%3D%E5%B4%A9%E5%9D%8F3&type=uid&value=5812573321&containerid=1076035812573321")
@@ -89,7 +97,7 @@ func RefreshWeibo() error {
 		str = re.Data.Cards[top].Mblog.CreatedAt + "\n" + str
 
 		for i := 0; i < re.Data.Cards[top].Mblog.PicNum; i++ {
-			str += "\n" + "[IR:pic=" + re.Data.Cards[top].Mblog.Pics[i].Large.URL + "]"
+			str += "\n" + "[QQ:pic=" + re.Data.Cards[top].Mblog.Pics[i].Large.URL + "]"
 		}
 
 		framework.SetSendMsg(str).DoSendMsg()
@@ -158,6 +166,10 @@ func RefreshWeibo() error {
 		}
 
 	}
+
+	cfg.Section("weibo").Key("top").SetValue(strconv.FormatUint(topID, 10))
+	cfg.Section("weibo").Key("newest").SetValue(strconv.FormatUint(newestID, 10))
+	cfg.SaveTo("temp.ini")
 	return nil
 }
 

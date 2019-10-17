@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 )
 
 type (
@@ -18,27 +20,21 @@ type (
 		ReceiveQQ string // 接收qq
 		From      string // 消息来源
 		Operator  string // 主动对象
-		Triggee   string // 被动对象
-		RecMsg    string // 接收消息
-		SendMsg   string // 将要发送的消息
+		//Triggee   string // 被动对象
+		RecMsg  string // 接收消息
+		SendMsg string // 将要发送的消息
 	}
 	// ReceiveJson 接收json
 	ReceiveJson struct {
-		Result            string `json:"Result"`
-		CreateTime        string `json:"CreateTime"`
-		EventAdditionType int    `json:"EventAdditionType"`
-		EventOperator     string `json:"EventOperator"`
-		EventType         int    `json:"EventType"`
-		FromNum           string `json:"FromNum"`
-		JSON              string `json:"Json"`
-		Message           string `json:"Message"`
-		MessageID         string `json:"MessageId"`
-		MessageNum        string `json:"MessageNum"`
-		Platform          int    `json:"Platform"`
-		RawMessage        string `json:"RawMessage"`
-		ReceiverQq        string `json:"ReceiverQq"`
-		Triggee           string `json:"Triggee"`
-		TypeCode          string `json:"TypeCode"`
+		Result     string    `json:"Result"`
+		TypeCode   string    `json:"TypeCode"`
+		Message    string    `json:"Message"`
+		Type       int       `json:"Type"`
+		Fromgroup  string    `json:"Fromgroup"`
+		Fromqq     string    `json:"Fromqq"`
+		MessageID  string    `json:"MessageId"`
+		Platform   int       `json:"Platform"`
+		CreateTime time.Time `json:"CreateTime"`
 	}
 )
 
@@ -50,11 +46,10 @@ func NewFramework() *Framework {
 
 func (framework Framework) ConstructContext(rj ReceiveJson) *Framework {
 	framework.ctx = msgContext{
-		TypeCode:  rj.EventType,
-		ReceiveQQ: rj.ReceiverQq,
-		From:      rj.FromNum,
-		Operator:  rj.EventOperator,
-		Triggee:   rj.Triggee,
+		TypeCode:  rj.Type,
+		ReceiveQQ: os.Getenv("BOT"),
+		From:      rj.Fromgroup,
+		Operator:  rj.Fromqq,
 		RecMsg:    rj.Message,
 		SendMsg:   "",
 	}
@@ -91,20 +86,8 @@ func (framework Framework) GetOperator() string {
 func (framework Framework) GetTypeCode() int {
 	return framework.ctx.TypeCode
 }
-func (framework Framework) GetTrigger() string {
-	return framework.ctx.Triggee
-}
 func (framework Framework) GetPicURL() {
-	sendJSON := make(map[string]interface{})
-	sendJSON["图片GUID"] = framework.ctx.RecMsg
 
-	bytesData, _ := json.Marshal(sendJSON)
-
-	// 发送请求
-	url := "http://localhost:36524/api/v1/Mpq/Api_GuidGetPicLink"
-	req, _ := http.NewRequest("POST", url, bytes.NewReader(bytesData))
-	req.Header.Set("Content-Type", "application/json")
-	framework.client.Do(req)
 }
 
 func (framework Framework) DoSendMsg() {
@@ -112,18 +95,14 @@ func (framework Framework) DoSendMsg() {
 	sendJSON := make(map[string]interface{})
 	switch framework.ctx.TypeCode {
 	case 1:
-		sendJSON["响应的QQ"] = framework.ctx.ReceiveQQ
-		sendJSON["信息类型"] = 1
-		sendJSON["参考子类型"] = 0
-		sendJSON["收信群_讨论组"] = ""
-		sendJSON["收信对象"] = framework.ctx.From
+		sendJSON["类型"] = 1
+		sendJSON["群组"] = framework.ctx.From
+		sendJSON["qQ号"] = framework.ctx.From
 		sendJSON["内容"] = framework.ctx.SendMsg
 	case 2:
-		sendJSON["响应的QQ"] = framework.ctx.ReceiveQQ
-		sendJSON["信息类型"] = 2
-		sendJSON["参考子类型"] = 0
-		sendJSON["收信群_讨论组"] = framework.ctx.From
-		sendJSON["收信对象"] = ""
+		sendJSON["类型"] = 2
+		sendJSON["群组"] = framework.ctx.From
+		sendJSON["qQ号"] = framework.ctx.Operator
 		sendJSON["内容"] = framework.ctx.SendMsg
 	default:
 		return
@@ -133,7 +112,7 @@ func (framework Framework) DoSendMsg() {
 	bytesData, _ := json.Marshal(sendJSON)
 
 	// 发送请求
-	url := "http://localhost:36524/api/v1/Mpq/Api_SendMsg"
+	url := "http://localhost:36524/api/v1/QQLight/Api_SendMsg"
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(bytesData))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -141,19 +120,44 @@ func (framework Framework) DoSendMsg() {
 }
 func (framework Framework) DoShutUp(obj string, t int) {
 	sendJSON := make(map[string]interface{})
-	sendJSON["响应的QQ"] = framework.ctx.ReceiveQQ
 	sendJSON["群号"] = framework.ctx.From
 	sendJSON["qq"] = obj
-	sendJSON["时长"] = t
+	sendJSON["禁言时长"] = t
 
 	bytesData, _ := json.Marshal(sendJSON)
-	url := "http://localhost:36524/api/v1/Mpq/Api_Shutup"
+	url := "http://localhost:36524/api/v1/QQLight/Api_Ban"
 
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(bytesData))
 	req.Header.Set("Content-Type", "application/json")
 
 	framework.client.Do(req)
 }
+func (framework Framework) DoJSONMusic(name string) {
+	sendJSON := make(map[string]interface{})
+	sendJSON["歌曲ID"] = name
+
+	bytesData, _ := json.Marshal(sendJSON)
+	url := "http://localhost:36524/api/v1/QQLight/Api_JsonMusic"
+
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(bytesData))
+	req.Header.Set("Content-Type", "application/json")
+
+	framework.client.Do(req)
+}
+func (framework Framework) Do163Music(id string) {
+	sendJSON := make(map[string]interface{})
+	sendJSON["歌曲ID"] = id
+
+	bytesData, _ := json.Marshal(sendJSON)
+	url := "http://localhost:36524/api/v1/QQLight/Api_163Music"
+
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(bytesData))
+	req.Header.Set("Content-Type", "application/json")
+
+	framework.client.Do(req)
+}
+
+// stop using
 func (framework Framework) DoSendObjectMsg() {
 	sendJSON := make(map[string]interface{})
 	sendJSON["响应的QQ"] = framework.ctx.ReceiveQQ
@@ -173,14 +177,48 @@ func (framework Framework) DoSendObjectMsg() {
 }
 func (framework Framework) DoGetGroupMember() {
 	sendJSON := make(map[string]interface{})
-	sendJSON["响应的QQ"] = framework.ctx.ReceiveQQ
 	sendJSON["群号"] = framework.ctx.From
 
 	bytesData, _ := json.Marshal(sendJSON)
-	url := "http://localhost:36524/api/v1/Mpq/Api_GetGroupMemberA"
+	url := "http://localhost:36524/api/v1/QQLight/Api_GetGroupMemberList"
 
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(bytesData))
 	req.Header.Set("Content-Type", "application/json")
 
 	framework.client.Do(req)
+}
+
+func (framework Framework) IsRecMsgPic() bool {
+	if strings.Contains(framework.ctx.RecMsg, "[QQ:pic=") {
+		if strings.Contains(framework.ctx.RecMsg, "]") {
+			return true
+		}
+	}
+	return false
+}
+func (framework Framework) IsRecMsgContainAT() (bool, []string) {
+	obj := []string{}
+	str := framework.ctx.RecMsg
+	flag := false
+
+	for {
+		if !strings.Contains(str, "[QQ:at=") {
+			break
+		}
+
+		if strings.Contains(str, "]") {
+			obj = append(obj, str[strings.Index(str, "[QQ:at=")+7:strings.Index(str, "]")])
+			str = str[strings.Index(str, "]")+1:]
+			flag = true
+		}
+	}
+
+	return flag, obj
+}
+
+func GetConstPic(picURL string) string {
+	return "[QQ:pic=" + picURL + "]"
+}
+func GetConstAT(obj string) string {
+	return "[QQ:at=" + obj + "]"
 }

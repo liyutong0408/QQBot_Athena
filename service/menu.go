@@ -6,22 +6,23 @@ import (
 	"strings"
 )
 
-type MenuService struct {
+type AtService struct {
 }
 
-func (service MenuService) Menu(ch chan bool, framework model.Framework) {
+func (service AtService) AtMe(ch chan bool, framework model.Framework) {
 	if framework.GetTypeCode() != 2 {
 		ch <- false
 		return
 	}
 
-	if !strings.Contains(framework.GetRecMsg(), "[@"+os.Getenv("BOT")+"]") {
+	if !strings.Contains(framework.GetRecMsg(), "[QQ:at="+os.Getenv("BOT")+"]") {
 		ch <- false
 	}
 
-	text := "项目地址：https://github.com/Logiase/QQBot_Athena"
-
-	framework.SetSendMsg(text).DoSendMsg()
-
-	ch <- true
+	if framework.GetRecMsg() == "[QQ:at="+os.Getenv("BOT")+"]" {
+		text := "在呢在呢\n项目地址：https://github.com/Logiase/QQBot_Athena"
+		framework.SetSendMsg(text).DoSendMsg()
+		ch <- true
+		return
+	}
 }

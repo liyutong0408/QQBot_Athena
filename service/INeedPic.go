@@ -22,15 +22,15 @@ type (
 )
 
 const (
-	pixiv picSource = "[https://api.pixivic.com/illust]"
-	pic0  picSource = "[https://s0.xinger.ink/acgimg/acgurl.php]"
-	pic1  picSource = "[https://sotama.cool/picture]"
-	pic2  picSource = "[http://www.dmoe.cc/random.php]"
-	pic3  picSource = "[http://laoliapi.cn/king/tupian/2cykj]"
-	pic4  picSource = "[http://acg.bakayun.cn/randbg.php]"
-	pic5  picSource = "[https://acg.toubiec.cn/random]"
-	pic6  picSource = "[http://pic.tsmp4.net/api/erciyuan/img.php]"
-	pic7  picSource = "[https://random.52ecy.cn/randbg.php]"
+	pixiv picSource = "https://api.pixivic.com/illust"
+	pic0  picSource = "https://s0.xinger.ink/acgimg/acgurl.php"
+	pic1  picSource = "https://sotama.cool/picture"
+	pic2  picSource = "http://www.dmoe.cc/random.php"
+	pic3  picSource = "http://laoliapi.cn/king/tupian/2cykj"
+	pic4  picSource = "http://acg.bakayun.cn/randbg.php"
+	pic5  picSource = "https://acg.toubiec.cn/random"
+	pic6  picSource = "http://pic.tsmp4.net/api/erciyuan/img.php"
+	pic7  picSource = "https://random.52ecy.cn/randbg.php"
 )
 
 var piclist = [8]picSource{pic0, "pic1,再来一次吧", pic2, pic3, "pic4,再来一次吧", pic5, pic6, "pic7,再来一次吧"}
@@ -45,11 +45,18 @@ func (service INeedPicService) INeedPic(ch chan bool, framework model.Framework)
 	}
 
 	if framework.GetRecMsg() == "一张瑟图" {
-		resp, _ := http.Get("https://api.lolicon.app/setu/")
+		var resp *http.Response
+		var err error
+		for {
+			resp, err = http.Get("https://api.lolicon.app/setu/")
+			if err == nil {
+				break
+			}
+		}
 		body, _ := ioutil.ReadAll(resp.Body)
 		var st setu
 		json.Unmarshal(body, &st)
-		framework.SetSendMsg("[" + st.URL + "]").DoSendMsg()
+		framework.SetSendMsg(model.GetConstPic(st.URL)).DoSendMsg()
 		/*
 			rd := rand.New(rand.NewSource(time.Now().UnixNano()))
 			framework.SetSendMsg(string(piclist[rd.Intn(7)])).DoSendMsg()
@@ -62,7 +69,7 @@ func (service INeedPicService) INeedPic(ch chan bool, framework model.Framework)
 
 	arg := framework.GetRecMsg()[13:]
 	if arg == "pixiv" {
-		framework.SetSendMsg(string(pixiv)).DoSendMsg()
+		framework.SetSendMsg(model.GetConstPic(string(pixiv))).DoSendMsg()
 		ch <- true
 		//fmt.Println("leaving INeedPic")
 		return
@@ -80,7 +87,7 @@ func (service INeedPicService) INeedPic(ch chan bool, framework model.Framework)
 		//fmt.Println("leaving INeedPic")
 		return
 	} else {
-		framework.SetSendMsg(string(piclist[i])).DoSendMsg()
+		framework.SetSendMsg(model.GetConstPic(string(piclist[i]))).DoSendMsg()
 		ch <- true
 		//fmt.Println("leaving INeedPic")
 		return
