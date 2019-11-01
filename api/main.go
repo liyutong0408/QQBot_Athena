@@ -49,6 +49,12 @@ func Mahua(c *gin.Context) {
 	case "Api_JsonMusicApiOut":
 		service.MusicService{}.SendMusic(rj.Result)
 		return
+	case "GroupMemberIncrease":
+		service.GMChangeService{}.GMIncrease(*t)
+		return
+	case "GroupMemberDecrease":
+		service.GMChangeService{}.GMDecrease(*t)
+		return
 	default:
 		return
 	}

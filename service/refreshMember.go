@@ -14,7 +14,7 @@ const admittedGroup = "547902826"
 
 func (service RefreshMemberService) AskRefresh(ch chan bool, framework model.Framework) {
 	//fmt.Println("entering AskRefresh")
-	if framework.GetFrom() != admittedGroup {
+	if framework.GetFromGroup() != admittedGroup {
 		ch <- false
 		//fmt.Println("leaving AskRefresh")
 		return
@@ -26,7 +26,7 @@ func (service RefreshMemberService) AskRefresh(ch chan bool, framework model.Fra
 		return
 	}
 
-	if framework.GetOperator() != os.Getenv("MASTER") {
+	if framework.GetFromQQ() != os.Getenv("MASTER") {
 		framework.SetSendMsg("权限不足").DoSendMsg()
 		ch <- true
 		//fmt.Println("leaving AskRefresh")
@@ -57,7 +57,7 @@ func (service RefreshMemberService) Refresh(result string) {
 		model.DB.Where(model.Member{QQ: member.QQ}).FirstOrCreate(&model.Member{}, member)
 	}
 
-	model.NewFramework().SimpleConstruct(2).SetFrom("547902826").SetSendMsg("finish").DoSendMsg()
+	model.NewFramework().SimpleConstruct(2).SetFromGroup("547902826").SetSendMsg("finish").DoSendMsg()
 }
 
 type gm struct {

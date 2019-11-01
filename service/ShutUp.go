@@ -15,7 +15,7 @@ var userList []string
 func (service ShutUpService) ShutUp(ch chan bool, framework model.Framework) {
 	//fmt.Println("entering ShutUp")
 	recMsg := framework.GetRecMsg()
-	operator := framework.GetOperator()
+	operator := framework.GetFromQQ()
 
 	ifResponse := false
 
@@ -27,7 +27,7 @@ func (service ShutUpService) ShutUp(ch chan bool, framework model.Framework) {
 	}
 
 	// 鉴权
-	if framework.GetOperator() != os.Getenv("MASTER") && !ifResponse {
+	if framework.GetFromQQ() != os.Getenv("MASTER") && !ifResponse {
 		ch <- false
 		//fmt.Println("leaving ShutUp")
 		return
@@ -35,6 +35,11 @@ func (service ShutUpService) ShutUp(ch chan bool, framework model.Framework) {
 
 	if strings.HasPrefix(recMsg, "禁言") {
 		if ok, objL := framework.IsRecMsgContainAT(); ok {
+			if strings.LastIndex(recMsg, "]")+2 > len(recMsg) {
+				framework.SetSendMsg("arg error").DoSendMsg()
+				ch <- true
+				return
+			}
 			time, err := strconv.Atoi(recMsg[strings.LastIndex(recMsg, "]")+2:])
 			if err != nil {
 				framework.SetSendMsg("arg error").DoSendMsg()
@@ -91,7 +96,7 @@ func (service ShutUpService) Refresh(ch chan bool, framework model.Framework) {
 		return
 	}
 
-	member, err := model.GetUser(framework.GetOperator())
+	member, err := model.GetUser(framework.GetFromQQ())
 	if err != nil {
 		ch <- true
 		framework.SetSendMsg("你好像没有人权呢...").DoSendMsg()
@@ -100,7 +105,7 @@ func (service ShutUpService) Refresh(ch chan bool, framework model.Framework) {
 	if member.Sponsor == true || member.Role != 2 {
 		framework.SetSendMsg("你就是我的Master吗？").DoSendMsg()
 		for _, item := range userList {
-			if framework.GetOperator() == item {
+			if framework.GetFromQQ() == item {
 				ch <- true
 				return
 			}

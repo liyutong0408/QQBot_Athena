@@ -21,7 +21,7 @@ func RefreshWeibo() error {
 	newestID, _ := cfg.Section("weibo").Key("newest").Uint64()
 	topID, _ := cfg.Section("weibo").Key("top").Uint64()
 
-	framework := model.NewFramework().SimpleConstruct(2).SetFrom("547902826")
+	framework := model.NewFramework().SimpleConstruct(2).SetFromGroup("547902826")
 	var re Weibo
 	resp, err := http.Get("https://m.weibo.cn/api/container/getIndex?uid=5812573321&luicode=10000011&lfid=100103type%3D1%26q%3D%E5%B4%A9%E5%9D%8F3&type=uid&value=5812573321&containerid=1076035812573321")
 	if err != nil {
@@ -57,7 +57,6 @@ func RefreshWeibo() error {
 	// 处理置顶
 	temp, _ := strconv.ParseUint(re.Data.Cards[top].Mblog.ID, 10, 64)
 	if topID != temp {
-
 		topID = temp
 		// 长消息
 		str := "置顶\n"
@@ -101,12 +100,14 @@ func RefreshWeibo() error {
 		}
 
 		framework.SetSendMsg(str).DoSendMsg()
+		framework.DoSendAnotherObj(2, "674367909")
 
 		if strings.Contains(str, "视频") {
-			str = "视频地址（一定时间内有效）\n" + re.Data.Cards[top].Mblog.PageInfo.MediaInfo.Mp4720PMp4
-			str += "\n微博地址\n" + re.Data.Cards[top].Mblog.PageInfo.PageURL
+			str = "视频地址\n" + re.Data.Cards[top].Mblog.PageInfo.MediaInfo.H5URL
+			str += "\n微博地址\nhttps://m.weibo.cn/detail/" + re.Data.Cards[top].Mblog.ID
 
 			framework.SetSendMsg(str).DoSendMsg()
+			framework.DoSendAnotherObj(2, "674367909")
 		}
 
 	}
@@ -153,16 +154,18 @@ func RefreshWeibo() error {
 		str = re.Data.Cards[newest].Mblog.CreatedAt + "\n" + str
 
 		for i := 0; i < re.Data.Cards[newest].Mblog.PicNum; i++ {
-			str += "\n" + "[" + re.Data.Cards[newest].Mblog.Pics[i].Large.URL + "]"
+			str += "\n" + model.GetConstPic(re.Data.Cards[newest].Mblog.Pics[i].Large.URL)
 		}
 
 		framework.SetSendMsg(str).DoSendMsg()
+		framework.DoSendAnotherObj(2, "674367909")
 
 		if strings.Contains(str, "视频") {
-			str = "视频地址（一定时间内有效）\n" + re.Data.Cards[newest].Mblog.PageInfo.MediaInfo.Mp4720PMp4
-			str += "\n微博地址\n" + re.Data.Cards[newest].Mblog.PageInfo.PageURL
+			str2 := "视频地址\n" + re.Data.Cards[newest].Mblog.PageInfo.MediaInfo.H5URL
+			str2 += "\n微博地址\nhttps://m.weibo.cn/detail/" + re.Data.Cards[newest].Mblog.ID
 
-			framework.SetSendMsg(str).DoSendMsg()
+			framework.SetSendMsg(str2).DoSendMsg()
+			framework.DoSendAnotherObj(2, "674367909")
 		}
 
 	}

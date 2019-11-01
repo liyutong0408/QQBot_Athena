@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -33,10 +34,33 @@ const (
 	pic7  picSource = "https://random.52ecy.cn/randbg.php"
 )
 
-var piclist = [8]picSource{pic0, "pic1,再来一次吧", pic2, pic3, "pic4,再来一次吧", pic5, pic6, "pic7,再来一次吧"}
+var (
+	piclist    = [8]picSource{pic0, "pic1,再来一次吧", pic2, pic3, "pic4,再来一次吧", pic5, pic6, "pic7,再来一次吧"}
+	setuswitch = false
+)
 
 // INeedPic service entry
 func (service INeedPicService) INeedPic(ch chan bool, framework model.Framework) {
+	if framework.GetFromQQ() == os.Getenv("MASTER") {
+		if framework.GetRecMsg() == "瑟图time" {
+			setuswitch = true
+			framework.SetSendMsg("瑟图time").DoSendMsg()
+			ch <- true
+			return
+		}
+		if framework.GetRecMsg() == "瑟图stop" {
+			setuswitch = false
+			ch <- true
+			framework.SetSendMsg("master不让了").DoSendMsg()
+			return
+		}
+	}
+
+	if setuswitch != true {
+		ch <- false
+		return
+	}
+
 	//fmt.Println("entering INeedPic")
 	if !strings.HasPrefix(framework.GetRecMsg(), "一张瑟图") {
 		ch <- false

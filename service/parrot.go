@@ -13,27 +13,27 @@ type parrotGroup struct {
 }
 
 func (service ParrotService) Parrot(framework model.Framework) {
-	if _, ok := parrotMap[framework.GetFrom()]; !ok {
-		parrotMap[framework.GetFrom()] = &parrotGroup{
+	if _, ok := parrotMap[framework.GetFromGroup()]; !ok {
+		parrotMap[framework.GetFromGroup()] = &parrotGroup{
 			flagParroted: false,
 		}
 	}
 
-	parrotMap[framework.GetFrom()].strTemp[2] = parrotMap[framework.GetFrom()].strTemp[1]
-	parrotMap[framework.GetFrom()].strTemp[1] = parrotMap[framework.GetFrom()].strTemp[0]
-	parrotMap[framework.GetFrom()].strTemp[0] = framework.GetRecMsg()
+	parrotMap[framework.GetFromGroup()].strTemp[2] = parrotMap[framework.GetFromGroup()].strTemp[1]
+	parrotMap[framework.GetFromGroup()].strTemp[1] = parrotMap[framework.GetFromGroup()].strTemp[0]
+	parrotMap[framework.GetFromGroup()].strTemp[0] = framework.GetRecMsg()
 
-	if parrotMap[framework.GetFrom()].strTemp[1] == parrotMap[framework.GetFrom()].strTemp[0] {
-		if parrotMap[framework.GetFrom()].strTemp[2] == parrotMap[framework.GetFrom()].strTemp[1] {
-			if parrotMap[framework.GetFrom()].flagParroted {
+	if parrotMap[framework.GetFromGroup()].strTemp[1] == parrotMap[framework.GetFromGroup()].strTemp[0] {
+		if parrotMap[framework.GetFromGroup()].strTemp[2] == parrotMap[framework.GetFromGroup()].strTemp[1] {
+			if parrotMap[framework.GetFromGroup()].flagParroted {
 				return
 			}
 			framework.SetSendMsg(framework.GetRecMsg()).DoSendMsg()
-			parrotMap[framework.GetFrom()].flagParroted = true
+			parrotMap[framework.GetFromGroup()].flagParroted = true
 		}
 		return
 	} else {
-		parrotMap[framework.GetFrom()].flagParroted = false
+		parrotMap[framework.GetFromGroup()].flagParroted = false
 		return
 	}
 }

@@ -54,7 +54,7 @@ type (
 )
 
 func (service ArknightsService) Arknights(ch chan bool, framework model.Framework) {
-	if framework.GetRecMsg() == "更新数据" && framework.GetOperator() == os.Getenv("MASTER") {
+	if framework.GetRecMsg() == "更新数据" && framework.GetFromQQ() == os.Getenv("MASTER") {
 		initHrData()
 		framework.SetSendMsg("数据更新完成").DoSendMsg()
 		ch <- true
@@ -62,18 +62,18 @@ func (service ArknightsService) Arknights(ch chan bool, framework model.Framewor
 	}
 	// start ocr
 	if framework.GetRecMsg() == "公招" {
-		if _, ok := arkMap[framework.GetFrom()]; !ok {
-			arkMap[framework.GetFrom()] = true
+		if _, ok := arkMap[framework.GetFromGroup()]; !ok {
+			arkMap[framework.GetFromGroup()] = true
 
 		} else {
-			arkMap[framework.GetFrom()] = true
+			arkMap[framework.GetFromGroup()] = true
 		}
 		framework.SetSendMsg("请发送公招截图").DoSendMsg()
 		ch <- true
 		return
 	}
 
-	if arkMap[framework.GetFrom()] {
+	if arkMap[framework.GetFromGroup()] {
 		if strings.Index(framework.GetRecMsg(), "[QQ:pic=") == 0 {
 			if strings.Contains(framework.GetRecMsg(), "]") {
 				var cfg *ini.File
@@ -87,9 +87,9 @@ func (service ArknightsService) Arknights(ch chan bool, framework model.Framewor
 				}
 				url := cfg.Section("data").Key("url").String()
 				service.UploadPic(framework, url)
-				arkLastGroup = framework.GetFrom()
+				arkLastGroup = framework.GetFromGroup()
 				ch <- true
-				arkMap[framework.GetFrom()] = false
+				arkMap[framework.GetFromGroup()] = false
 				return
 			}
 		}

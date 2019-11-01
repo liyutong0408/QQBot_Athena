@@ -23,12 +23,12 @@ func (service MusicService) Music(ch chan bool, framework model.Framework) {
 	songName := strings.TrimLeft(framework.GetRecMsg(), "点歌")
 	songName = strings.TrimLeft(songName, " ")
 	framework.DoJSONMusic(songName)
-	musicLastGroup = framework.GetFrom()
+	musicLastGroup = framework.GetFromGroup()
 
 	ch <- true
 	return
 }
 
 func (service MusicService) SendMusic(result string) {
-	model.NewFramework().SimpleConstruct(2).SetFrom(musicLastGroup).SetSendMsg(result).DoSendMsg()
+	model.NewFramework().SimpleConstruct(2).SetFromGroup(musicLastGroup).SetSendMsg(result).DoSendMsg()
 }

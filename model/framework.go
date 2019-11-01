@@ -18,11 +18,11 @@ type (
 	msgContext struct {
 		TypeCode  int    // 事件类型
 		ReceiveQQ string // 接收qq
-		From      string // 消息来源
-		Operator  string // 主动对象
-		//Triggee   string // 被动对象
-		RecMsg  string // 接收消息
-		SendMsg string // 将要发送的消息
+		FromGroup string // 消息来源
+		FromQQ    string // 主动对象
+		Operator  string
+		RecMsg    string // 接收消息
+		SendMsg   string // 将要发送的消息
 	}
 	// ReceiveJson 接收json
 	ReceiveJson struct {
@@ -32,6 +32,7 @@ type (
 		Type       int       `json:"Type"`
 		Fromgroup  string    `json:"Fromgroup"`
 		Fromqq     string    `json:"Fromqq"`
+		OperatorQq string    `json:"OperatorQq"`
 		MessageID  string    `json:"MessageId"`
 		Platform   int       `json:"Platform"`
 		CreateTime time.Time `json:"CreateTime"`
@@ -48,8 +49,9 @@ func (framework Framework) ConstructContext(rj ReceiveJson) *Framework {
 	framework.ctx = msgContext{
 		TypeCode:  rj.Type,
 		ReceiveQQ: os.Getenv("BOT"),
-		From:      rj.Fromgroup,
-		Operator:  rj.Fromqq,
+		FromGroup: rj.Fromgroup,
+		FromQQ:    rj.Fromqq,
+		Operator:  rj.OperatorQq,
 		RecMsg:    rj.Message,
 		SendMsg:   "",
 	}
@@ -65,8 +67,12 @@ func (framework Framework) SetSendMsg(msg string) *Framework {
 	framework.ctx.SendMsg = msg
 	return &framework
 }
-func (framework Framework) SetFrom(from string) *Framework {
-	framework.ctx.From = from
+func (framework Framework) SetFromGroup(from string) *Framework {
+	framework.ctx.FromGroup = from
+	return &framework
+}
+func (framework Framework) SetFromQQ(from string) *Framework {
+	framework.ctx.FromQQ = from
 	return &framework
 }
 func (framework Framework) SetType(t int) *Framework {
@@ -77,10 +83,13 @@ func (framework Framework) SetType(t int) *Framework {
 func (framework Framework) GetRecMsg() string {
 	return framework.ctx.RecMsg
 }
-func (framework Framework) GetFrom() string {
-	return framework.ctx.From
+func (framework Framework) GetFromGroup() string {
+	return framework.ctx.FromGroup
 }
-func (framework Framework) GetOperator() string {
+func (framework Framework) GetFromQQ() string {
+	return framework.ctx.FromQQ
+}
+func (framework Framework) GetOprater() string {
 	return framework.ctx.Operator
 }
 func (framework Framework) GetTypeCode() int {
@@ -96,13 +105,13 @@ func (framework Framework) DoSendMsg() {
 	switch framework.ctx.TypeCode {
 	case 1:
 		sendJSON["类型"] = 1
-		sendJSON["群组"] = framework.ctx.From
-		sendJSON["qQ号"] = framework.ctx.From
+		sendJSON["群组"] = framework.ctx.FromGroup
+		sendJSON["qQ号"] = framework.ctx.FromGroup
 		sendJSON["内容"] = framework.ctx.SendMsg
 	case 2:
 		sendJSON["类型"] = 2
-		sendJSON["群组"] = framework.ctx.From
-		sendJSON["qQ号"] = framework.ctx.Operator
+		sendJSON["群组"] = framework.ctx.FromGroup
+		sendJSON["qQ号"] = framework.ctx.FromQQ
 		sendJSON["内容"] = framework.ctx.SendMsg
 	default:
 		return
@@ -120,7 +129,7 @@ func (framework Framework) DoSendMsg() {
 }
 func (framework Framework) DoShutUp(obj string, t int) {
 	sendJSON := make(map[string]interface{})
-	sendJSON["群号"] = framework.ctx.From
+	sendJSON["群号"] = framework.ctx.FromGroup
 	sendJSON["qq"] = obj
 	sendJSON["禁言时长"] = t
 
@@ -162,8 +171,8 @@ func (framework Framework) DoSendObjectMsg() {
 	sendJSON := make(map[string]interface{})
 	sendJSON["响应的QQ"] = framework.ctx.ReceiveQQ
 	sendJSON["收信对象类型"] = framework.ctx.TypeCode
-	sendJSON["收信对象所属群_讨论组"] = framework.ctx.From
-	sendJSON["收信对象QQ"] = framework.ctx.Operator
+	sendJSON["收信对象所属群_讨论组"] = framework.ctx.FromGroup
+	sendJSON["收信对象QQ"] = framework.ctx.FromQQ
 	sendJSON["objectMsg"] = framework.ctx.SendMsg
 	sendJSON["结构子类型"] = 02
 
@@ -177,11 +186,28 @@ func (framework Framework) DoSendObjectMsg() {
 }
 func (framework Framework) DoGetGroupMember() {
 	sendJSON := make(map[string]interface{})
-	sendJSON["群号"] = framework.ctx.From
+	sendJSON["群号"] = framework.ctx.FromGroup
 
 	bytesData, _ := json.Marshal(sendJSON)
 	url := "http://localhost:36524/api/v1/QQLight/Api_GetGroupMemberList"
 
+	req, _ := http.NewRequest("POST", url, bytes.NewReader(bytesData))
+	req.Header.Set("Content-Type", "application/json")
+
+	framework.client.Do(req)
+}
+func (framework Framework) DoSendAnotherObj(t int, obj string) {
+	sendJSON := make(map[string]interface{})
+	sendJSON["类型"] = t
+	sendJSON["群组"] = obj
+	sendJSON["qQ号"] = obj
+	sendJSON["内容"] = framework.ctx.SendMsg
+
+	// 序列化
+	bytesData, _ := json.Marshal(sendJSON)
+
+	// 发送请求
+	url := "http://localhost:36524/api/v1/QQLight/Api_SendMsg"
 	req, _ := http.NewRequest("POST", url, bytes.NewReader(bytesData))
 	req.Header.Set("Content-Type", "application/json")
 
